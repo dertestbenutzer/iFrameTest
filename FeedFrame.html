@@ -1,0 +1,62 @@
+<html>
+<head>
+<script language="javascript">
+var streamworkSSO = {};
+(function(ns) {
+ns.ssoWindow = null;
+// This is the URL that we want to end up at.
+ns.url = "https://streamwork.com/updates/show_feeds?seasip=sap";
+// URL used for SSO.
+ns.logonUrl = "https://streamwork.com/session_support/embed?seasip=sap";
+// URL to show the "we're busy" spinner.
+ns.spinnerUrl = "https://streamwork.com/images/spinner.gif";
+// The timer we use to check if the SSO window has closed.
+ns.checkWindowInterval = 0;
+
+var widgetWidth = '450px';
+var widgetHeight = '600px';
+
+// Show a message in the frame container.
+function showMessage(s) {
+  document.getElementById('feedframecontainer').innerHTML = "<div>"+s+"</div>";
+};
+// Let the user know we're thinking.
+function showSpinner() {
+  showMessage("<img src='"+ns.spinnerUrl+"'>");
+}
+// Show the feed widget.
+function showContent() {
+  var feedframe = document.getElementById("feedframecontainer");
+  feedframe.innerHTML = '<iframe width="'+widgetWidth+'" height="'+widgetHeight+'" frameborder="0" src="'+ns.url+'"></iframe>';
+};
+// Called once the SSO window closes.
+function ssoCleanup() {
+  if (ns.ssoWindow.closed) {
+    // If the window's been closed, we can move on. Clear the timer and render the content.
+    window.clearInterval(ns.checkWindowInterval);
+    showContent();
+  }
+};
+// Open the window for SSO, and monitor it for completion.
+ns.sso = function() {
+  showSpinner(); // we're busy
+  // Start the logon process. Window needs to be big enough for username/password prompt if certificate send fails.
+  ns.ssoWindow = window.open(ns.logonUrl, "StreamWorkSSO", "height=600,width=800,resizable=yes");
+  if (!ns.ssoWindow) {
+    // Creating the window failed. This is usually due to pop-up blockers. Explicit mouse-clicks aren't subject to pop-up blocks, so present a link
+      // for the user to click on, and suggest they turn their blocker off.
+    showMessage("StreamWork SSO requires a pop-up window. Please <a href='javascript:streamworkSSO.sso();'>click here</a> to log on. Consider disabling your pop-up blocker for this page.");
+  } else {
+    // Looks like we're in... Set an interval check to see when the window closes.
+    ns.checkWindowInterval = window.setInterval(ssoCleanup, 100);
+  }
+};
+} (streamworkSSO));
+</script>
+</head>
+<body onload="streamworkSSO.sso();">
+<h1>Cool Page</h1>
+<p>Cool page is cool.</p>
+<div id="feedframecontainer"></div>
+</body>
+</html>
